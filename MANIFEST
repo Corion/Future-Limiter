@@ -14,7 +14,6 @@ README.mkdn
 t/future-limiter-yaml.t
 t/future-ratelimiter-await.t
 t/ratelimits.yml
-talk-rate-limiting.pod
 xt/99-changes.t
 xt/99-compile.t
 xt/99-manifest.t
@@ -22,3 +21,4 @@ xt/99-pod.t
 xt/99-todo.t
 xt/99-unix-text.t
 xt/99-versions.t
+xt/meta-lint.t
