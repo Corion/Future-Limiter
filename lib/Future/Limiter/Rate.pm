@@ -13,6 +13,43 @@ with 'Future::Limiter::Role'; # ->limit(), ->schedule()
 
 our $VERSION = '0.01';
 
+=head1 NAME
+
+Future::Limiter::Rate - impose rate limits
+
+=head1 SYNOPSIS
+
+  # 2 items per second, be bursty up to 5 items
+  my $l = Future::Limiter::Rate->new( rate => 120/60, burst => 5 );
+
+  $some_future->then(sub {
+      $l->limit()
+  })->then(sub {
+      # we are rate limited here
+      my( $token ) = @_;
+      ...
+  })
+
+This module implements rate limiting through L<Algorithm::TokenBucket>.
+
+=head1 METHODS
+
+=head2 C<< ->new >>
+
+=head2 C<< ->limit >>
+
+  my $f = $l->limit( $key, 'foo', 'bar' );
+  $f->then(sub {
+      my( $token, @args ) = @_;
+  })
+
+Returns a future that will be fulfilled once the rate limits hold. The future
+callback is passed a token that is used to control when the section is left.
+The optional arguments are passed through to allow arguments without another
+scope.
+
+=cut
+
 has burst => (
     is => 'ro',
     default => 5,
@@ -83,7 +120,7 @@ sub remove_active( $self ) {
 
 Processes all futures that can be started while obeying the current rate limits
 (including burst).
-  
+
 =cut
 
 sub schedule_queued( $self ) {
