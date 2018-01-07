@@ -9,6 +9,8 @@ use Test::More;
 BEGIN {
     my $ok = eval {
         require Future::AsyncAwait;
+        Future::AsyncAwait->VERSION(0.11); # important bugfix for closures
+        Future::AsyncAwait->import();
 
         # We want to use/force the AnyEvent backend for now
         require AnyEvent::Future;
@@ -32,8 +34,6 @@ our $limiter = Future::Limiter->new(
     rate  => 30/60, # 0.5/s
 );
 
-#warn Dumper $limiter;
-
 async sub limit_test {
     my( $j ) = @_;
 
@@ -41,7 +41,6 @@ async sub limit_test {
     my $l = $limiter->limit;
     my $token = await $l;
     return $j
-    #
 };
 
 my $started = time;
