@@ -25,7 +25,13 @@ has rate => (
 
 has bucket => (
     is => 'lazy',
-    default => sub( $self ) { Algorithm::TokenBucket->new( $self->{ rate }, $self->{ burst }, $self->{ burst }) },
+    default => sub( $self ) {
+        Algorithm::TokenBucket->new(
+                $self->rate,
+                $self->burst,
+                $self->burst
+        )
+    },
 );
 
 has queue => (
