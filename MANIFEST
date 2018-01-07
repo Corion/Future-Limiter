@@ -1,13 +1,18 @@
-.gitignore
-bin/index-url.pl
-lib/Promises/RateLimiter.pm
+Changes
+lib/Future/Limiter.pm
+lib/Future/Limiter/Chain.pm
+lib/Future/Limiter/Rate.pm
+lib/Future/Limiter/Resource.pm
+lib/Future/Limiter/Role.pm
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
 README
 README.mkdn
-t/promise-ratelimiter-maximum.t
-t/promise-ratelimiter.t
+t/future-limiter-yaml.t
+t/future-ratelimiter-await.t
+t/ratelimits.yml
+talk-rate-limiting.pod
 xt/99-changes.t
 xt/99-compile.t
 xt/99-manifest.t

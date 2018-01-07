@@ -1,94 +1,98 @@
+
+[![Build Status](https://travis-ci.org/Corion/Future-Limiter.svg?branch=master)](https://github.com/Corion/Future-Limiter)
+
 # NAME
 
-Promises::RateLimiter - rate limit paths through promises
+Future::Limiter - impose rate and resource limits
 
 # SYNOPSIS
 
-This is the synopsis of [Promises](https://metacpan.org/pod/Promises), but with added limiting
-of the number of simulatneous HTTP requests and the rate at which
-requests are made to the server.
-
-    use AnyEvent::HTTP;
-    use JSON::XS qw[ decode_json ];
-    use Promises qw[ collect deferred ];
-    use Promises::RateLimiter;
-
-    my $concurrent_http_requests = Promises::RateLimiter->new(
-        maximum => 4,
-        rate => 30/60, # 30 requests/minute
+    # max 4 requests (per host)
+    my $concurrency = Future::Limiter->new(
+        maximum => 4
     );
 
-    sub fetch_it {
-          my ($uri) = @_;
-          my $d = deferred;
-          http_get $uri => sub {
-              my ($body, $headers) = @_;
-              $headers->{Status} == 200
-                  ? $d->resolve( $uri, $body )
-                  : $d->reject( $body )
-          };
-          $d->promise;
-    }
+    # rate of 30 per minute
+    my $rate = Future::Limiter->new(
+        rate  => 0.5,
+        burst => 2,
+    );
 
+    my ($host_token, $rate_token);
+    $concurrency->limit( $hostname, $url )->then(sub {
+        ($host_token, my $url ) = @_;
+    })->then( sub {
+        $rate->limit( $hostname, $url )
+    })->then( sub {
+        ( $rate_token, my $url ) = @_;
+        request_url( $url )
+    })->then(sub {
+        ...
+        undef $host_token;
+        undef $rate_token;
+    });
 
-    my @urls = (@ARGV);
-    while(@urls) {
+This module provides an API to handle rate limits and resource limits in a
+unified API.
 
-      my $cv = AnyEvent->condvar;
-      
-      my @limited_urls = map {
-          map {
-              # Wrap each URL in a Promise
-              my $p = deferred;
-              $p->resolve( $uri );
-              $p->promise
-              ->limit( $concurrent_http_requests )
-          }
-      } splice @urls;
+## Usage with Future::AsyncAwait
 
-      my @fetch = map {
-          $_->limit( $concurrent_http_requests )
-          ->then( sub { 
-              my( $url ) = @_;
-              fetch_it($_)
-          })
-          ->then( sub {
-              my($url, $html) = @_;
-              
-              my @newly_found = extract_urls($html);
-              
-              push @urls, @newly_found;
-              
-              return $url, $html;
-          })
-      } @now_fetching;
+The usage with [Future::AsyncAwait](https://metacpan.org/pod/Future::AsyncAwait) is much more elegant, as you only need
+to keep the token around and other parameters live implicitly in your scope:
 
-      # Wait until all requests have either died or returned.
-      my $done = collect( @fetch );
-      
-      my @retrieved = await( $done );
-      ...
-    }
+    my( $host_token ) = await $concurrency->limit( $hostname );
+    my( $rate_token ) = await $rate->limit( $hostname );
+    request_url( $url )
+    ...
 
-# DRAWBACKS
+## `$l->limit( $key, @args )`
 
-Currently, the limiter sends the promise to sleep until at least one
-promise can continue. This produces a thundering herd effect as all
-outstanding promises will wake up and retry at the same time but only
-one will likely succeed. See
-[Promises::RateLimiter::Backoff](https://metacpan.org/pod/Promises::RateLimiter::Backoff) for a way to mitigate that.
+    my $token;
+    $l->limit( $key )->then( sub {
+        $token = @_;
+        
+        ... return another Future
+    })->then(sub {
+    
+        # release the token to release our limiting
+        undef $token
+    })
 
-Maybe Promises::RateLimiter::Backoff should become the default
-strategy to prevent thundering herds.
+This method returns a [Future](https://metacpan.org/pod/Future) that will become fulfilled if the current
+limit is not reached. The `$key` parameter restricts that resource to a
+specific key (like, a hostname).
 
-# NAME
+The future returns a token that must be released for the resource to be freed
+again. Additional parameters are passed through as well.
 
-Promises::RateLimiter::Backoff - rate limit with larger retry spread
+# SEE ALSO
 
-# Strategy
+[Future::Mutex](https://metacpan.org/pod/Future::Mutex)
 
-This limiter counts how many attempts were already limited and schedules
-the current promise to retry linearly after all previous promises will
-have retried.
+# REPOSITORY
 
-No exponential backoff is tried.
+The public repository of this module is
+[http://github.com/Corion/Future-Limiter](http://github.com/Corion/Future-Limiter).
+
+# SUPPORT
+
+The public support forum of this module is
+[https://perlmonks.org/](https://perlmonks.org/).
+
+# BUG TRACKER
+
+Please report bugs in this module via the RT CPAN bug queue at
+[https://rt.cpan.org/Public/Dist/Display.html?Name=Future-Limiter](https://rt.cpan.org/Public/Dist/Display.html?Name=Future-Limiter)
+or via mail to [future-limiter-Bugs@rt.cpan.org](https://metacpan.org/pod/future-limiter-Bugs@rt.cpan.org).
+
+# AUTHOR
+
+Max Maischein `corion@cpan.org`
+
+# COPYRIGHT (c)
+
+Copyright 2018 by Max Maischein `corion@cpan.org`.
+
+# LICENSE
+
+This module is released under the same terms as Perl itself.

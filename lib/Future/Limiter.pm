@@ -8,6 +8,8 @@ use Carp qw(croak);
 
 with 'Future::Limiter::Role';
 
+our $VERSION = '0.01';
+
 use Future::Limiter::Resource;
 use Future::Limiter::Rate;
 
@@ -130,3 +132,37 @@ sub limit( $self, $key = undef, @args ) {
 }
 
 1;
+
+=head1 SEE ALSO
+
+L<Future::Mutex>
+
+=head1 REPOSITORY
+
+The public repository of this module is
+L<http://github.com/Corion/Future-Limiter>.
+
+=head1 SUPPORT
+
+The public support forum of this module is
+L<https://perlmonks.org/>.
+
+=head1 BUG TRACKER
+
+Please report bugs in this module via the RT CPAN bug queue at
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Future-Limiter>
+or via mail to L<future-limiter-Bugs@rt.cpan.org>.
+
+=head1 AUTHOR
+
+Max Maischein C<corion@cpan.org>
+
+=head1 COPYRIGHT (c)
+
+Copyright 2018 by Max Maischein C<corion@cpan.org>.
+
+=head1 LICENSE
+
+This module is released under the same terms as Perl itself.
+
+=cut

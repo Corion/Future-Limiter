@@ -39,5 +39,5 @@ sub check {
 
 find({wanted => \&check, no_chdir => 1},
      grep { -d $_ }
-         'blib', 'scripts', 'examples', 'bin'
+         'blib', 'scripts', 'examples', 'bin', 'lib'
      );

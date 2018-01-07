@@ -15,4 +15,4 @@ something_else:
     # takes over a second, the maximum will be reached
     - maximum: 4
     - burst : 3
-      rate : 60/60
+      rate : 1
