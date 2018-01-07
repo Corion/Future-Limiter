@@ -44,6 +44,9 @@ my %module = (
     BUILD_REQUIRES => {
         'ExtUtils::MakeMaker' => 0,
     },
+    TEST_REQUIRES => {
+        'Data::Dumper' => 0,
+    },
 
     'PREREQ_PM' => {
         'Filter::signatures' => 0,
@@ -84,6 +87,10 @@ sub WriteMakefile1 {  #Written by Alexandr Ciornii, version 0.21. Added by eumm-
         #EUMM 6.5502 has problems with BUILD_REQUIRES
         $params{PREREQ_PM}={ %{$params{PREREQ_PM} || {}} , %{$params{BUILD_REQUIRES}} };
         delete $params{BUILD_REQUIRES};
+    }
+    if ($params{TEST_REQUIRES} and $eumm_version < 6.64) {
+        $params{PREREQ_PM}={ %{$params{PREREQ_PM} || {}} , %{$params{TEST_REQUIRES}} };
+        delete $params{TEST_REQUIRES};
     }
     delete $params{CONFIGURE_REQUIRES} if $eumm_version < 6.52;
     delete $params{MIN_PERL_VERSION} if $eumm_version < 6.48;
