@@ -1,14 +1,25 @@
 #!perl -w
 use strict;
-use Test::More tests => 4;
 use Filter::signatures;
 no warnings 'experimental::signatures';
 use feature 'signatures';
 use Future;
-use Future::AsyncAwait;
+use Test::More;
 
-# We want to use/force the AnyEvent backend for now
-use AnyEvent::Future;
+BEGIN {
+    my $ok = eval {
+        require Future::AsyncAwait;
+
+        # We want to use/force the AnyEvent backend for now
+        require AnyEvent::Future;
+    };
+
+    if( ! $ok) {
+        plan skip_all => $@;
+        exit;
+    };
+    plan tests => 4;
+};
 
 use Future::Limiter;
 
