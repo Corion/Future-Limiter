@@ -11,7 +11,6 @@ use Future::AsyncAwait;
 use AnyEvent::Future;
 
 use Future::Limiter;
-#use RateLimiter::Bucket;
 
 use Data::Dumper;
 
