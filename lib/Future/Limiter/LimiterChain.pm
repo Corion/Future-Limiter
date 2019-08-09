@@ -29,9 +29,9 @@ sub new( $class, $limits ) {
 }
 sub chain( $self ) { $self->{chain} }
 
-sub limit( $self, @args ) {
+sub limit( $self, $key=undef, @args ) {
     my $f = Future->wait_all(
-        map { $_->limit( @args ) } @{ $self->chain }
+        map { $_->limit( $key, @args ) } @{ $self->chain }
     )->then( sub (@chain) {
         my @tokens;
         for my $f2 (@chain) {
