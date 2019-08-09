@@ -10,6 +10,7 @@ use YAML qw(LoadFile);
 use Future::Limiter;
 use Future::Limiter::LimiterChain;
 use Future::Scheduler::Functions 'sleep', 'future';
+use Future::AsyncAwait;
 
 use Data::Dumper;
 
@@ -43,23 +44,31 @@ sub work($time, $id) {
     })->catch(sub{warn "Uhoh @_"})->then(sub{ future()->done($id)});
 }
 
-# This approach requires that all sections we use will always be available
-# in the config file. This is unlikely. Also, we don't get a good way for
-# insights into the latency or min / max throughput
+sub limit($name, @args) {
+    if( my $limiter = $limit{$name}) {
+        return $limiter->limit( undef, @args )
+    } else {
+        return Future->done( @args )
+    }
+};
+
+# XXX this fails to compile with Future::AsyncAwait 0.31
+async sub launch {
+    my( $id ) = @_;
+    warn "Request $id";
+    await limit('request', $id );
+    warn "work $id";
+    my @r = await work(4, $id);
+    warn "nonsense $id";
+    #await limit('nonsense', @r );
+    
+    push @done, [time-$start,$id];
+};
 
 my (@jobs, @done);
 my $start = time;
 for my $i (1..10) {
-    push @jobs, Future->done($i)->then(sub($id) {
-        $limit{'request'}->limit(undef, $i)
-    })->then(sub($token,$id,@r) {
-        work(4, $id);
-    })->then(sub($id,@r) {
-        push @done, [time-$start,$id];
-        Future->done
-    })->catch(sub{
-        warn "@_ / $! / $_";
-    });
+    push @jobs, launch($i);
 }
 # Wait for the jobs
 my @res = Future->wait_all(@jobs)->get();

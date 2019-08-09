@@ -43,17 +43,29 @@ sub work($time, $id) {
     })->catch(sub{warn "Uhoh @_"})->then(sub{ future()->done($id)});
 }
 
-# This approach requires that all sections we use will always be available
-# in the config file. This is unlikely. Also, we don't get a good way for
-# insights into the latency or min / max throughput
+sub limit($name, @args) {
+    if( my $limiter = $limit{$name}) {
+    warn "Actually limiting via $name";
+        return $limiter->limit( @args )
+    } else {
+        # Return a fake token and our arguments
+        return Future->done( undef, @args )
+    }
+};
+
+# Can we have ->race() / ->hyper() ? Is it the same as ->limit() ?
 
 my (@jobs, @done);
 my $start = time;
 for my $i (1..10) {
     push @jobs, Future->done($i)->then(sub($id) {
-        $limit{'request'}->limit(undef, $i)
-    })->then(sub($token,$id,@r) {
+        limit('request', $id )
+    })->then(sub($token,$id) {
         work(4, $id);
+    })->then(sub(@r) {
+        limit('nonsense', @r )
+    })->then(sub($token,$id,@r) {
+        return Future->done($id, @r)
     })->then(sub($id,@r) {
         push @done, [time-$start,$id];
         Future->done
