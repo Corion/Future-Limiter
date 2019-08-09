@@ -42,6 +42,10 @@ sub work($time, $id) {
     })->catch(sub{warn "Uhoh @_"})->then(sub{ future()->done($id)});
 }
 
+# This approach requires that all sections we use will always be available
+# in the config file. This is unlikely. Also, we don't get a good way for
+# insights into the latency or min / max throughput
+
 my (@jobs, @done);
 my $start = time;
 for my $i (1..10) {
