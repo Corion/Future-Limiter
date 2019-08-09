@@ -76,6 +76,8 @@ use Carp qw( croak );
 use Future::RateLimiter;
 use Future::Limiter;
 
+our $VERSION = '0.01';
+
 sub new( $class, $limits ) {
     my @chain;
     for my $l (@$limits) {
