@@ -6,8 +6,6 @@ no warnings 'experimental::signatures';
 use feature 'signatures';
 use Future;
 use Future::AsyncAwait;
-use feature 'signatures';
-no warnings 'experimental::signatures';
 
 # We want to use/force the AnyEvent backend for now
 use AnyEvent::Future;
