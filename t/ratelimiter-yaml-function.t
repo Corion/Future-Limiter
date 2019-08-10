@@ -58,4 +58,4 @@ is $done[0]->[0], $first, "Burst";
 is $done[1]->[0], $first, "Burst";
 is $done[2]->[0], $first, "Burst";
 is $done[3]->[0], $first+1, "Rate/maximum";
-is $done[4]->[0], $first+4, "Rate/maximum";
+cmp_ok $done[4]->[0], '>=', $first+4, "Rate/maximum";
