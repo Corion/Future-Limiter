@@ -72,6 +72,21 @@ sub limit($self, $eventname, $eventkey=undef, @args) {
     }
 };
 
+sub visualize( $self ) {
+    return [
+        map {
+        {
+          name       => $_,
+          high_water => 0,
+          next       => 0,
+          backlog    => 0,
+          # submission frequency?
+          # completion frequency?
+        },
+        } sort keys %{$self->limiters}
+    ],
+}
+
 1;
 
 =head1 TODO
