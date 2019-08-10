@@ -43,6 +43,7 @@ WriteMakefile1(
         'Algorithm::TokenBucket' => 0,
         'AnyEvent::Future' => 0, # for the timer...
         'Future::AsyncAwait' => 0.30, # for parsing "async sub($foo) { ..."
+        'Future::IO' => 0, # for getting ->sleep() futures
         'Guard' => 0,
         'Scalar::Util' => 0, # for weaken
     },
