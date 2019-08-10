@@ -7,7 +7,7 @@ use Test::More tests => 8;
 use AnyEvent::Future;
 
 use YAML qw(LoadFile);
-use Future::Limiter;
+use Future::LimiterBucket;
 use Future::Limiter::LimiterChain;
 use Future::Scheduler::Functions 'sleep', 'future';
 
@@ -26,6 +26,16 @@ sub from_file( $filename ) {
     generate_limiters( $spec )
 }
 
+sub limit($name, @args) {
+    if( my $limiter = $limit{$name}) {
+        # All things belong to the same key
+        return $limiter->limit( undef, @args )
+    } else {
+        # Return a fake token and our arguments
+        return Future->done( [], @args )
+    }
+};
+
 my %limit = from_file( 't/ratelimits.yml' );
 
 ok exists $limit{namelookup}, "We have a limiter named 'namelookup'";
@@ -43,16 +53,6 @@ sub work($time, $id) {
     })->catch(sub{warn "Uhoh @_"})->then(sub{ future()->done($id)});
 }
 
-sub limit($name, @args) {
-    if( my $limiter = $limit{$name}) {
-        # All things belong to the same key
-        return $limiter->limit( undef, @args )
-    } else {
-        # Return a fake token and our arguments
-        return Future->done( [], @args )
-    }
-};
-
 # Can we have ->race() / ->hyper() ? Is it the same as ->limit() ?
 
 my (@jobs, @done);
@@ -61,7 +61,7 @@ for my $i (1..10) {
     push @jobs, Future->done($i)->then(sub($id) {
         limit('request', $id )
     })->then(sub {
-    my ($token,$id) = @_;
+        my ($token,$id) = @_;
         work(4, $id);
     })->then(sub(@r) {
         limit('nonsense', @r )

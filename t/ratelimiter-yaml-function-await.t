@@ -7,7 +7,7 @@ use Test::More tests => 8;
 use AnyEvent::Future;
 
 use YAML qw(LoadFile);
-use Future::Limiter;
+use Future::LimiterBucket;
 use Future::Limiter::LimiterChain;
 use Future::Scheduler::Functions 'sleep', 'future';
 use Future::AsyncAwait;

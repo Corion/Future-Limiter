@@ -1,4 +1,4 @@
-package Future::Limiter;
+package Future::LimiterBucket;
 use strict;
 use Moo 2;
 use Filter::signatures;
