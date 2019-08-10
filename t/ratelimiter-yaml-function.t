@@ -7,39 +7,14 @@ use Test::More tests => 8;
 use AnyEvent::Future;
 
 use YAML qw(LoadFile);
-use Future::LimiterBucket;
-use Future::Limiter::LimiterChain;
+use Future::Limiter;
 use Future::Scheduler::Functions 'sleep', 'future';
 
 use Data::Dumper;
-my %limit = from_file( 't/ratelimits.yml' );
+my $limit = Future::Limiter->from_file( 't/ratelimits.yml' );
 
-
-sub generate_limiters( $blob ) {
-    my %limiters = map {
-        $_ => Future::Limiter::LimiterChain->new( $blob->{$_} )
-    } sort keys %$blob;
-
-    %limiters
-}
-
-sub from_file( $filename ) {
-    my $spec = LoadFile $filename;
-    generate_limiters( $spec )
-}
-
-sub limit($name, @args) {
-    if( my $limiter = $limit{$name}) {
-        # All things belong to the same key
-        return $limiter->limit( undef, @args )
-    } else {
-        # Return a fake token and our arguments
-        return Future->done( [], @args )
-    }
-};
-
-ok exists $limit{namelookup}, "We have a limiter named 'namelookup'";
-ok exists $limit{request}, "We have a limiter named 'request'";
+ok exists $limit->limits->{namelookup}, "We have a limiter named 'namelookup'";
+ok exists $limit->limits->{request}, "We have a limiter named 'request'";
 
 # Now check that we take the time we like:
 # 10 requests at 1/s with a burst of 3, and a duration of 4/req should take
@@ -59,12 +34,12 @@ my (@jobs, @done);
 my $start = time;
 for my $i (1..10) {
     push @jobs, Future->done($i)->then(sub($id) {
-        limit('request', $id )
+        $limit->limit('request', undef, $id )
     })->then(sub {
         my ($token,$id) = @_;
         work(4, $id);
     })->then(sub(@r) {
-        limit('nonsense', @r )
+        $limit->limit('nonsense', undef, @r )
     })->then(sub($token,$id,@r) {
         return Future->done($id, @r)
     })->then(sub($id,@r) {

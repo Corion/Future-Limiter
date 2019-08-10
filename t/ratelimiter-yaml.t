@@ -3,33 +3,20 @@ use strict;
 use Filter::signatures;
 no warnings 'experimental::signatures';
 use feature 'signatures';
-use Test::More tests => 8;
+use Test::More tests => 18;
 use AnyEvent::Future;
 
 use YAML qw(LoadFile);
 use Future::LimiterBucket;
-use Future::Limiter::LimiterChain;
+use Future::Limiter;
 use Future::Scheduler::Functions 'sleep', 'future';
 
 use Data::Dumper;
 
-sub generate_limiters( $blob ) {
-    my %limiters = map {
-        $_ => Future::Limiter::LimiterChain->new( $blob->{$_} )
-    } sort keys %$blob;
+my $limit = Future::Limiter->from_file( 't/ratelimits.yml' );
 
-    %limiters
-}
-
-sub from_file( $filename ) {
-    my $spec = LoadFile $filename;
-    generate_limiters( $spec )
-}
-
-my %limit = from_file( 't/ratelimits.yml' );
-
-ok exists $limit{namelookup}, "We have a limiter named 'namelookup'";
-ok exists $limit{request}, "We have a limiter named 'request'";
+ok exists $limit->limits->{namelookup}, "We have a limiter named 'namelookup'";
+ok exists $limit->limits->{request}, "We have a limiter named 'request'";
 
 # Now check that we take the time we like:
 # 10 requests at 1/s with a burst of 3, and a duration of 4/req should take
@@ -51,8 +38,9 @@ my (@jobs, @done);
 my $start = time;
 for my $i (1..10) {
     push @jobs, Future->done($i)->then(sub($id) {
-        $limit{'request'}->limit(undef, $i)
+        $limit->limit('request',undef, $i)
     })->then(sub($token,$id,@r) {
+        ok ref $token, "We get a token passed from the limiter, and it's a ref";
         work(4, $id);
     })->then(sub($id,@r) {
         push @done, [time-$start,$id];

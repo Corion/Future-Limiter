@@ -7,30 +7,16 @@ use Test::More tests => 8;
 use AnyEvent::Future;
 
 use YAML qw(LoadFile);
-use Future::LimiterBucket;
-use Future::Limiter::LimiterChain;
+use Future::Limiter;
 use Future::Scheduler::Functions 'sleep', 'future';
 use Future::AsyncAwait;
 
 use Data::Dumper;
 
-sub generate_limiters( $blob ) {
-    my %limiters = map {
-        $_ => Future::Limiter::LimiterChain->new( $blob->{$_} )
-    } sort keys %$blob;
+my $limit = Future::Limiter->from_file( 't/ratelimits.yml' );
 
-    %limiters
-}
-
-sub from_file( $filename ) {
-    my $spec = LoadFile $filename;
-    generate_limiters( $spec )
-}
-
-my %limit = from_file( 't/ratelimits.yml' );
-
-ok exists $limit{namelookup}, "We have a limiter named 'namelookup'";
-ok exists $limit{request}, "We have a limiter named 'request'";
+ok exists $limit->limits->{namelookup}, "We have a limiter named 'namelookup'";
+ok exists $limit->limits->{request}, "We have a limiter named 'request'";
 
 # Now check that we take the time we like:
 # 10 requests at 1/s with a burst of 3, and a duration of 4/req should take
@@ -45,11 +31,7 @@ sub work($time, $id) {
 }
 
 sub limit($name, @args) {
-    if( my $limiter = $limit{$name}) {
-        return $limiter->limit( undef, @args )
-    } else {
-        return Future->done( @args )
-    }
+    $limit->limit($name, undef, @args );
 };
 my (@jobs, @done);
 my $start = time;
