@@ -11,6 +11,45 @@ use Algorithm::TokenBucket;
 
 with 'Future::Limiter::Role'; # ->limit(), ->schedule()
 
+our $VERSION = '0.01';
+
+=head1 NAME
+
+Future::Limiter::Rate - impose rate limits
+
+=head1 SYNOPSIS
+
+  # 2 items per second, be bursty up to 5 items
+  my $l = Future::Limiter::Rate->new( rate => 120/60, burst => 5 );
+
+  $some_future->then(sub {
+      $l->limit()
+  })->then(sub {
+      # we are rate limited here
+      my( $token ) = @_;
+      ...
+  })
+
+This module implements rate limiting through L<Algorithm::TokenBucket>.
+
+=head1 METHODS
+
+=head2 C<< ->new >>
+
+=head2 C<< ->limit >>
+
+  my $f = $l->limit( $key, 'foo', 'bar' );
+  $f->then(sub {
+      my( $token, @args ) = @_;
+  })
+
+Returns a future that will be fulfilled once the rate limits hold. The future
+callback is passed a token that is used to control when the section is left.
+The optional arguments are passed through to allow arguments without another
+scope.
+
+=cut
+
 has burst => (
     is => 'ro',
     default => 5,
@@ -23,7 +62,13 @@ has rate => (
 
 has bucket => (
     is => 'lazy',
-    default => sub( $self ) { Algorithm::TokenBucket->new( $self->{ rate }, $self->{ burst }, $self->{ burst }) },
+    default => sub( $self ) {
+        Algorithm::TokenBucket->new(
+                $self->rate,
+                $self->burst,
+                $self->burst
+        )
+    },
 );
 
 has queue => (
@@ -36,8 +81,6 @@ has next_token_available => (
     is => 'rw',
 );
 
-# XXX parallelism-limiting
-# For a semaphore-style lock
 sub get_release_token( $self ) {
     # Returns a token for housekeeping
     # The housekeeping callback may or may not trigger more futures
@@ -47,12 +90,11 @@ sub get_release_token( $self ) {
         $self->remove_active();
         # scan the queue and execute the next future
         if( my $next = shift @{ $self->queue }) {
-            #my( $future, $args ) = @$next;
-            $self->add_active()->then(sub( $token ) {
+            my $t; $t = $self->add_active();
+            $t->then(sub( $token ) {
+                undef $t;
                 $next->done( $token );
-            })->get;
-            # XXX Why do we want the ->get here?! How else can we
-            # prevent losing our ->add_active future?
+            });
         };
     };
 }
@@ -78,7 +120,7 @@ sub remove_active( $self ) {
 
 Processes all futures that can be started while obeying the current rate limits
 (including burst).
-  
+
 =cut
 
 sub schedule_queued( $self ) {
@@ -125,3 +167,37 @@ sub visualize( $self ) {
 }
 
 1;
+
+=head1 SEE ALSO
+
+L<Algorithm::TokenBucket>
+
+=head1 REPOSITORY
+
+The public repository of this module is
+L<http://github.com/Corion/Future-Limiter>.
+
+=head1 SUPPORT
+
+The public support forum of this module is
+L<https://perlmonks.org/>.
+
+=head1 BUG TRACKER
+
+Please report bugs in this module via the RT CPAN bug queue at
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Future-Limiter>
+or via mail to L<future-limiter-Bugs@rt.cpan.org>.
+
+=head1 AUTHOR
+
+Max Maischein C<corion@cpan.org>
+
+=head1 COPYRIGHT (c)
+
+Copyright 2018 by Max Maischein C<corion@cpan.org>.
+
+=head1 LICENSE
+
+This module is released under the same terms as Perl itself.
+
+=cut

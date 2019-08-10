@@ -19,38 +19,65 @@ regen_README($main_file);
 
 my @tests = map { glob $_ } 't/*.t', 't/*/*.t';
 
-WriteMakefile1(
+my %module = (
     NAME                => $module,
     AUTHOR              => q{Max Maischein <corion@cpan.org>},
     VERSION_FROM        => $main_file,
     ABSTRACT_FROM       => $main_file,
     META_MERGE => {
+        "meta-spec" => { version => 2 },
         resources => {
-            repository => 'https://github.com/Corion/promises-ratelimiter',
+            repository => {
+                web => 'https://github.com/Corion/Future-Limiter',
+                url => 'git://github.com/Corion/Future-Limiter.git',
+                type => 'git',
+            }
         },
-    },
-    BUILD_REQUIRES => {
-        'Exporter'   => '5',    # we need the "import" facility
+        dynamic_config   => 0, # we promise to keep META.* up-to-date
+        x_static_install => 1, # we are pure Perl and don't do anything fancy
     },
 
     'LICENSE'=> 'perl',
+    MIN_PERL_VERSION => '5.006', # we use "our"
 
     PL_FILES            => {},
+    BUILD_REQUIRES => {
+        'ExtUtils::MakeMaker' => 0,
+    },
+    TEST_REQUIRES => {
+        'Data::Dumper' => 0,
+    },
+
     'PREREQ_PM' => {
-        'Moo' => 2, # fatal warnings are just stupid
-        'Future'   => 0,
+        'Carp'                   => 0,
+        'Moo'                    => 2, # fatal warnings are just stupid
+        'Filter::signatures'     => 0,
         'Algorithm::TokenBucket' => 0,
-        'AnyEvent::Future' => 0, # for the timer...
-        'Future::AsyncAwait' => 0.30, # for parsing "async sub($foo) { ..."
-        'Future::IO' => 0, # for getting ->sleep() futures
-        'Guard' => 0,
-        'Scalar::Util' => 0, # for weaken
+        'AnyEvent::Future'       => 0, # for the timer...
+        'Future'                 => 0,
+        'Future::AsyncAwait'     => 0.30, # for parsing "async sub($foo) { ..."
+        'Future::IO'             => 0, # for getting ->sleep() futures
+        'Guard'                  => 0,
+        'Scalar::Util'           => 0, # for weaken
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean               => { FILES => 'Promises-RateLimiter-*' },
+    clean               => { FILES => 'Future-Limiter-*' },
 
     test            => { TESTS => join( ' ', @tests ) },
 );
+
+# This is so that we can do
+#     require 'Makefile.PL'
+# and then call get_module_info
+
+sub get_module_info { %module }
+
+if( ! caller ) {
+    # I should maybe use something like Shipwright...
+    regen_README($main_file);
+    #regen_EXAMPLES();
+    WriteMakefile1(get_module_info);
+};
 
 1;
 
@@ -65,6 +92,10 @@ sub WriteMakefile1 {  #Written by Alexandr Ciornii, version 0.21. Added by eumm-
         $params{PREREQ_PM}={ %{$params{PREREQ_PM} || {}} , %{$params{BUILD_REQUIRES}} };
         delete $params{BUILD_REQUIRES};
     }
+    if ($params{TEST_REQUIRES} and $eumm_version < 6.64) {
+        $params{PREREQ_PM}={ %{$params{PREREQ_PM} || {}} , %{$params{TEST_REQUIRES}} };
+        delete $params{TEST_REQUIRES};
+    }
     delete $params{CONFIGURE_REQUIRES} if $eumm_version < 6.52;
     delete $params{MIN_PERL_VERSION} if $eumm_version < 6.48;
     delete $params{META_MERGE} if $eumm_version < 6.46;
@@ -78,14 +109,45 @@ sub WriteMakefile1 {  #Written by Alexandr Ciornii, version 0.21. Added by eumm-
 }
 
 sub regen_README {
+    # README is the short version that just tells people what this is
+    # and how to install it
     eval {
-        require Pod::Readme;
+        # Get description
+        my $readme = join "\n",
+            pod_section($_[0], 'NAME', 'no heading' ),
+            pod_section($_[0], 'DESCRIPTION' ),
+            <<INSTALL,
 
-        my $parser = Pod::Readme->new();
+INSTALLATION
 
-        # Read POD from Module.pm and write to README
-        $parser->parse_from_file($_[0], 'README');
+This is a Perl module distribution. It should be installed with whichever
+tool you use to manage your installation of Perl, e.g. any of
+
+  cpanm .
+  cpan  .
+  cpanp -i .
+
+Consult http://www.cpan.org/modules/INSTALL.html for further instructions.
+Should you wish to install this module manually, the procedure is
+
+  perl Makefile.PL
+  make
+  make test
+  make install
+
+INSTALL
+            pod_section($_[0], 'REPOSITORY'),
+            pod_section($_[0], 'SUPPORT'),
+            pod_section($_[0], 'BUG TRACKER'),
+            pod_section($_[0], 'AUTHOR'),
+            pod_section($_[0], 'LICENSE' ),
+            pod_section($_[0], 'COPYRIGHT' ),
+    ;
+        update_file( 'README', $readme );
     };
+    # README.mkdn is the documentation that will be shown as the main
+    # page of the repository on Github. Hence we recreate the POD here
+    # as Markdown
     eval {
         require Pod::Markdown;
 
@@ -93,9 +155,54 @@ sub regen_README {
 
         # Read POD from Module.pm and write to README
         $parser->parse_from_file($_[0]);
-        open my $fh, '>', 'README.mkdn'
-            or die "Couldn't open 'README.mkdn': $!";
-        print $fh $parser->as_markdown;
+        my $readme_mkdn = <<STATUS . $parser->as_markdown;
+
+[![Build Status](https://travis-ci.org/Corion/Future-Limiter.svg?branch=master)](https://github.com/Corion/Future-Limiter)
+
+STATUS
+        update_file( 'README.mkdn', $readme_mkdn );
     };
 }
 
+sub pod_section {
+    my( $filename, $section, $remove_heading ) = @_;
+    open my $fh, '<', $filename
+        or die "Couldn't read '$filename': $!";
+
+    my @section =
+        grep { /^=head1\s+$section/.../^=/ } <$fh>;
+    pop @section if $section[-1] =~ /^=/;
+    shift @section if $remove_heading;
+
+    # Trim the section
+    if( @section ) {
+        pop @section
+            while $section[-1] =~ /^\s*$/;
+        shift @section
+            while $section[0] =~ /^\s*$/;
+    };
+
+    @section = map { $_ =~ s!^=\w+\s+!!; $_ } @section;
+    return join "", @section;
+}
+
+sub update_file {
+    my( $filename, $new_content ) = @_;
+    my $content;
+    if( -f $filename ) {
+        open my $fh, '<', $filename
+            or die "Couldn't read '$filename': $!";
+        binmode $fh;
+        local $/;
+        $content = <$fh>;
+    };
+
+    if( $content ne $new_content ) {
+        if( open my $fh, '>', $filename ) {
+            binmode $fh;
+            print $fh $new_content;
+        } else {
+            warn "Couldn't (re)write '$filename': $!";
+        };
+    };
+}

@@ -15,4 +15,6 @@ Makefile$
 ^cpan/
 ^MYMETA
 ^.releaserc
-^Promises-RateLimiter
+^.gitignore
+^.travis.yml
+^Future-Limiter

@@ -4,19 +4,16 @@ use Filter::signatures;
 use feature 'signatures';
 no warnings 'experimental::signatures';
 
-use Future::Scheduler;
+our $VERSION = '0.01';
 
-has 'scheduler' => (
-    is => 'lazy',
-    default => sub { Future::Scheduler->new() }
-);
+use Future::IO;
 
 sub future( $self ) {
-    $self->scheduler->future()
+    $self->sleep(0)->new()
 }
 
 sub sleep( $self, $seconds = 0 ) {
-    $self->scheduler->sleep($seconds)
+    Future::IO->sleep($seconds)
 }
 
 sub schedule( $self, $f, $args=[], $seconds = 0 ) {
@@ -37,3 +34,33 @@ sub limit( $self, $key=undef, @args ) {
 }
 
 1;
+
+=head1 REPOSITORY
+
+The public repository of this module is
+L<http://github.com/Corion/Future-Limiter>.
+
+=head1 SUPPORT
+
+The public support forum of this module is
+L<https://perlmonks.org/>.
+
+=head1 BUG TRACKER
+
+Please report bugs in this module via the RT CPAN bug queue at
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Future-Limiter>
+or via mail to L<future-limiter-Bugs@rt.cpan.org>.
+
+=head1 AUTHOR
+
+Max Maischein C<corion@cpan.org>
+
+=head1 COPYRIGHT (c)
+
+Copyright 2018 by Max Maischein C<corion@cpan.org>.
+
+=head1 LICENSE
+
+This module is released under the same terms as Perl itself.
+
+=cut

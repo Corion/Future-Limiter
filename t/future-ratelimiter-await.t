@@ -1,14 +1,27 @@
 #!perl -w
 use strict;
-use Test::More tests => 4;
 use Filter::signatures;
 no warnings 'experimental::signatures';
 use feature 'signatures';
 use Future;
-use Future::AsyncAwait;
+use Test::More;
 
-# We want to use/force the AnyEvent backend for now
-use AnyEvent::Future;
+BEGIN {
+    my $ok = eval {
+        require Future::AsyncAwait;
+        Future::AsyncAwait->VERSION(0.11); # important bugfix for closures
+        Future::AsyncAwait->import();
+
+        # We want to use/force the AnyEvent backend for now
+        require AnyEvent::Future;
+    };
+
+    if( ! $ok) {
+        plan skip_all => $@;
+        exit;
+    };
+    plan tests => 4;
+};
 
 use Future::LimiterBucket;
 
@@ -21,14 +34,13 @@ our $limiter = Future::LimiterBucket->new(
     rate  => 30/60, # 0.5/s
 );
 
-#warn Dumper $limiter;
+async sub limit_test {
+    my( $j ) = @_;
 
-async sub limit_test($j) {
     die "No more limiter for $j" unless $limiter;
     my $l = $limiter->limit;
     my $token = await $l;
     return $j
-    #
 };
 
 my $started = time;

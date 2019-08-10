@@ -1,0 +1,33 @@
+---
+abstract: 'impose rate and resource limits'
+author:
+  - 'Max Maischein <corion@cpan.org>'
+build_requires:
+  Data::Dumper: '0'
+  ExtUtils::MakeMaker: '0'
+configure_requires:
+  ExtUtils::MakeMaker: '0'
+dynamic_config: 0
+generated_by: 'ExtUtils::MakeMaker version 7.24, CPAN::Meta::Converter version 2.150010'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: '1.4'
+name: Future-Limiter
+no_index:
+  directory:
+    - t
+    - inc
+requires:
+  Carp: '0'
+  Filter::signatures: '0'
+  Future: '0'
+  Future::Scheduler: '0'
+  Moo: '2'
+  Scalar::Util: '0'
+  perl: '5.006'
+resources:
+  repository: git://github.com/Corion/Future-Limiter.git
+version: '0.01'
+x_serialization_backend: 'CPAN::Meta::YAML version 0.018'
+x_static_install: 1
