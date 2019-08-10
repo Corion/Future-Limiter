@@ -24,8 +24,6 @@ our $limiter = Future::LimiterBucket->new(
 #warn Dumper $limiter;
 
 async sub limit_test($j) {
-    #my( $j ) = @_;
-
     die "No more limiter for $j" unless $limiter;
     my $l = $limiter->limit;
     my $token = await $l;
