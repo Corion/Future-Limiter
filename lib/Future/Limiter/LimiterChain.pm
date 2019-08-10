@@ -1,5 +1,6 @@
 package Future::Limiter::LimiterChain;
 use strict;
+use Moo 2;
 use Filter::signatures;
 no warnings 'experimental::signatures';
 use feature 'signatures';
@@ -7,6 +8,7 @@ use Carp qw( croak );
 use Future::LimiterBucket;
 
 our $VERSION = '0.01';
+
 
 =head1 NAME
 
@@ -26,9 +28,9 @@ Future::Limiter::LimiterChain - limit by maximum concurrent, rate
             - burst : 3
             rate : 60/60
     YAML
-    
+
     ...
-    
+
     push @jobs, Future->done($i)->then(sub($id) {
         $l->limit('request', undef, $id )
     })->then(sub {
@@ -44,25 +46,40 @@ Future::Limiter::LimiterChain - limit by maximum concurrent, rate
 
 =cut
 
-sub new( $class, $limits ) {
+
+has 'chain' => (
+    is => 'ro',
+    default => sub { [] },
+);
+
+around BUILDARGS => sub( $orig, $class, $rules ) {
     my @chain;
-    for my $l (@$limits) {
+
+    my @limit_rules;
+    if( ref $rules eq 'HASH' ) {
+        push @limit_rules, map { $_->{keyed} = 0; $_ } @{ $rules->{global} };
+        push @limit_rules, @{ $rules->{by_key} };
+    } else {
+        @limit_rules = @$rules;
+    };
+
+    for my $l (@limit_rules) {
         if( exists $l->{maximum}) {
             push @chain, Future::LimiterBucket->new( %$l );
         } elsif( exists $l->{burst} ) {
             $l->{ rate } =~ m!(\d+)\s*/\s*(\d+)!
                 or croak "Invalid rate limit: $l->{rate}";
             $l->{rate} = $1 / $2;
-            push @chain, Future::LimiterBucket->new( rate => $l->{rate}, burst => $l->{burst}, );
+            #push @chain, Future::LimiterBucket->new( rate => $l->{rate}, burst => $l->{burst}, );
+            push @chain, Future::LimiterBucket->new( %$l );
         } else {
             require Data::Dumper;
-            croak "Don't know what to do with " . Data::Dumper::Dumper $limits;
+            croak "Don't know what to do with " . Data::Dumper::Dumper \@limit_rules;
         }
     }
 
-    bless { chain => \@chain } => $class;
-}
-sub chain( $self ) { $self->{chain} }
+    $orig->($class, { chain => \@chain });
+};
 
 sub limit( $self, $key=undef, @args ) {
     my $f = Future->wait_all(
