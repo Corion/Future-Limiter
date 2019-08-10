@@ -7,6 +7,8 @@ use YAML qw(LoadFile);
 use Future;
 use Future::Limiter::LimiterChain;
 
+our $VERSION = '0.01';
+
 with 'Future::Limiter::Role';
 
 use Future::Limiter::Resource;

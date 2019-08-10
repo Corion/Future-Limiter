@@ -10,7 +10,7 @@ use ExtUtils::MakeMaker qw(WriteMakefile);
 my $eumm_version = $ExtUtils::MakeMaker::VERSION;
 $eumm_version =~ s/_//;
 
-my $module = 'Promises::RateLimiter';
+my $module = 'Future::Limiter';
 (my $main_file = "lib/$module.pm" ) =~ s!::!/!g;
 
 # I should maybe use something like Shipwright...
@@ -38,7 +38,6 @@ WriteMakefile1(
     PL_FILES            => {},
     'PREREQ_PM' => {
         'Moo' => 2, # fatal warnings are just stupid
-        'Promises' => 0,
         'Future'   => 0,
         'Algorithm::TokenBucket' => 0,
         'AnyEvent::Future' => 0, # for the timer...
@@ -74,7 +73,7 @@ sub WriteMakefile1 {  #Written by Alexandr Ciornii, version 0.21. Added by eumm-
     delete $params{AUTHOR} if $] < 5.005;
     delete $params{ABSTRACT_FROM} if $] < 5.005;
     delete $params{BINARY_LOCATION} if $] < 5.005;
-    
+
     WriteMakefile(%params);
 }
 
