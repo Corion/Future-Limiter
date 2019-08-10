@@ -8,7 +8,7 @@ use AnyEvent::Future;
 
 use YAML qw(LoadFile);
 use Future::Limiter;
-use Future::Scheduler::Functions 'sleep', 'future';
+use Future::IO;
 
 use Data::Dumper;
 my $limit = Future::Limiter->from_file( 't/ratelimits.yml' );
@@ -23,9 +23,9 @@ ok exists $limit->limits->{request}, "We have a limiter named 'request'";
 # 3@4 , 1@5  3@8, 1@9
 
 sub work($time, $id) {
-    sleep( $time )->on_ready(sub {
+    Future::IO->sleep( $time )->on_ready(sub {
         #warn "Timer expired";
-    })->catch(sub{warn "Uhoh @_"})->then(sub{ future()->done($id)});
+    })->catch(sub{warn "Uhoh @_"})->then(sub{ Future->done($id)});
 }
 
 # Can we have ->race() / ->hyper() ? Is it the same as ->limit() ?

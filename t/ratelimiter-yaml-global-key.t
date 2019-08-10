@@ -11,7 +11,7 @@ use List::Util 'max';
 use YAML qw(LoadFile);
 use Future::LimiterBucket;
 use Future::Limiter;
-use Future::Scheduler::Functions 'sleep', 'future';
+use Future::IO;
 
 use Data::Dumper;
 
@@ -26,10 +26,10 @@ ok exists $limit->limits->{http_request}, "We have a limiter named 'http_request
 # 3@4 , 1@5  3@8, 1@9
 
 sub http_request($time, $id) {
-    sleep( $time )->on_ready(sub {
+    Future::IO->sleep( $time )->on_ready(sub {
         #warn "$id done";
     })->catch(sub{warn "Uhoh @_"})
-    ->then(sub{ future()->done($id)});
+    ->then(sub{ Future->done($id)});
 }
 
 # This approach requires that all sections we use will always be available

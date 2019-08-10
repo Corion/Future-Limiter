@@ -11,7 +11,7 @@ use List::Util 'max';
 use YAML qw(LoadFile);
 use Future::LimiterBucket;
 use Future::Limiter;
-use Future::Scheduler::Functions 'sleep', 'future';
+use Future::IO;
 
 use Future::AsyncAwait;
 
@@ -28,10 +28,10 @@ ok exists $limit->limits->{http_request}, "We have a limiter named 'http_request
 # 3@4 , 1@5  3@8, 1@9
 
 sub http_request($time, $id) {
-    sleep( $time )->on_ready(sub {
+    Future::IO->sleep( $time )->on_ready(sub {
         #warn "$id done";
     })->catch(sub{warn "Uhoh @_"})
-    ->then(sub{ future()->done($id)});
+    ->then(sub{ Future->done($id)});
 }
 
 # This approach requires that all sections we use will always be available
@@ -90,6 +90,6 @@ for my $set (\@urls_by_host, \@urls) {
         cmp_ok $res{$host}->[-1], '>=', $first+6, "Rate/maximum";
     };
     cmp_ok $total, '>=', 20-6, "We maintain a global rate of 90 requests/60s and a burst of 6";
-    
+
     @done = ();
 }
