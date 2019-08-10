@@ -51,6 +51,8 @@ sub from_config( $class, $config ) {
 =head2 C<< $limiter->limit( $eventname, $eventkey, @args ) >>
 
     my ($token,@args) = await $limiter->limit('fetch',$url->hostname);
+    ... do work
+    undef $token; # release token
 
     $limiter->limit('fetch',$url->hostname,$url)->then(sub( $token, $url) {
         return http_request($url)->on_ready(sub { undef $token });
