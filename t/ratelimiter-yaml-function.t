@@ -12,6 +12,8 @@ use Future::Limiter::LimiterChain;
 use Future::Scheduler::Functions 'sleep', 'future';
 
 use Data::Dumper;
+my %limit = from_file( 't/ratelimits.yml' );
+
 
 sub generate_limiters( $blob ) {
     my %limiters = map {
@@ -35,8 +37,6 @@ sub limit($name, @args) {
         return Future->done( [], @args )
     }
 };
-
-my %limit = from_file( 't/ratelimits.yml' );
 
 ok exists $limit{namelookup}, "We have a limiter named 'namelookup'";
 ok exists $limit{request}, "We have a limiter named 'request'";
