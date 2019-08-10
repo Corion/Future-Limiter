@@ -51,22 +51,18 @@ sub limit($name, @args) {
         return Future->done( @args )
     }
 };
+my (@jobs, @done);
+my $start = time;
 
-# XXX this fails to compile with Future::AsyncAwait 0.31
 async sub launch {
     my( $id ) = @_;
-    warn "Request $id";
     await limit('request', $id );
-    warn "work $id";
     my @r = await work(4, $id);
-    warn "nonsense $id";
-    #await limit('nonsense', @r );
+    await limit('nonsense', @r );
     
     push @done, [time-$start,$id];
 };
 
-my (@jobs, @done);
-my $start = time;
 for my $i (1..10) {
     push @jobs, launch($i);
 }
