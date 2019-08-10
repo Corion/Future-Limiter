@@ -1,0 +1,21 @@
+application:
+    - name: "My first rate-limited application"
+ratelimits:
+    request:
+        # Make no more than 1 request per second
+        # have no more than 4 requests in flight at a time
+        # If there is a backlog, process them as quickly as possible
+        - burst : 3
+          rate : 60/60
+        - maximum: 4
+    namelookup:
+        - burst : 3
+          rate : 60/60
+    something_else:
+        # have no more than 4 requests in flight
+        # but limit the rate to 3 burst and 1/s
+        # So, initially, the maximum won't be reached, but if a response
+        # takes over a second, the maximum will be reached
+        - maximum: 4
+        - burst : 3
+          rate : 60/60

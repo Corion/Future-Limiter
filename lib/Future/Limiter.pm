@@ -1,10 +1,11 @@
 package Future::Limiter;
-use strict;
 use Moo 2;
 use Filter::signatures;
-use feature 'signatures';
 no warnings 'experimental::signatures';
-use Carp qw(croak);
+use feature 'signatures';
+use YAML qw(LoadFile);
+use Future;
+use Future::Limiter::LimiterChain;
 
 with 'Future::Limiter::Role';
 
@@ -17,25 +18,25 @@ Future::Limiter - impose rate and resource limits
 
 =head1 SYNOPSIS
 
-  # max 4 requests (per host)
-  my $concurrency = Future::Limiter->new(
-      maximum => 4
-  );
+    my $l = Future::Limiter->from_yaml(<<'YAML');
+        request:
+            # Make no more than 1 request per second
+            # have no more than 4 requests in flight at a time
+            # If there is a backlog, process them as quickly as possible
+            - burst : 3
+            rate : 60/60
+            - maximum: 4
+        namelookup:
+            - burst : 3
+            rate : 60/60
+    YAML
 
-  # rate of 30 per minute
-  my $rate = Future::Limiter->new(
-      rate  => 0.5,
-      burst => 2,
-  );
+    ...
 
   my ($host_token, $rate_token);
-  $concurrency->limit( $hostname, $url )->then(sub {
-      ($host_token, my $url ) = @_;
-  })->then( sub {
-      $rate->limit( $hostname, $url )
-  })->then( sub {
-      ( $rate_token, my $url ) = @_;
-      request_url( $url )
+  $limiter->limit( 'request', $hostname, $url )->then(sub {
+      my ($host_token, $url ) = @_;
+      request_url( $url )->on_ready( undef $host_token );
   })->then(sub {
       ...
       undef $host_token;
@@ -57,76 +58,85 @@ to keep the token around and other parameters live implicitly in your scope:
 
 =cut
 
-# Container for the defaults
-
-has bucket_class => (
-    is => 'ro',
-);
-
-has bucket_args => (
+has limits => (
     is => 'ro',
     default => sub { {} },
 );
 
-has 'buckets' => (
-    is => 'lazy',
-    default => sub { {} },
-);
+sub _generate_limiters( $class, $config ) {
+    my %limiters = map {
+        $_ => Future::Limiter::LimiterChain->new( $config->{$_} )
+    } sort keys %$config;
 
-sub _make_bucket( $self, %options ) {
-    %options = (%{ $self->bucket_args() }, %options);
-    $options{ scheduler } ||= $self->scheduler;
-    $self->bucket_class->new( \%options );
+    $class->new({
+        limits => \%limiters
+    })
 }
 
-sub _bucket( $self, $key ) {
-    $key = '' unless defined $key;
-    $self->buckets->{ $key } ||= $self->_make_bucket;
-}
-
-around 'BUILDARGS' => sub ( $orig, $class, @args ) {
-    my %args;
-    if( ref $args[0] ) {
-        %args = ${ $args[0] }
-    } else {
-        %args = @args
-    };
-    my $bucket_class = delete $args{ bucket_class };
-    if( exists $args{ maximum }) {
-        $bucket_class ||= 'Future::Limiter::Resource';
-    } elsif( exists $args{ rate } or exists $args{ burst }) {
-        $bucket_class ||= 'Future::Limiter::Rate';
-    } else {
-        require Data::Dumper;
-        croak "Don't know what to do with " . Data::Dumper::Dumper \%args;
-    }
-    $class->$orig( bucket_class => $bucket_class, bucket_args => \%args )
-};
-
-=head2 C<< $l->limit( $key, @args ) >>
-
-  my $token;
-  $l->limit( $key )->then( sub {
-      $token = @_;
-      
-      ... return another Future
-  })->then(sub {
-  
-      # release the token to release our limiting
-      undef $token
-  })
-
-This method returns a L<Future> that will become fulfilled if the current
-limit is not reached. The C<$key> parameter restricts that resource to a
-specific key (like, a hostname).
-
-The future returns a token that must be released for the resource to be freed
-again. Additional parameters are passed through as well.
+=head1 METHODS
 
 =cut
 
-sub limit( $self, $key = undef, @args ) {
-    return $self->_bucket( $key )->limit( @args );
+sub from_file( $class, $filename ) {
+    my $spec = LoadFile $filename;
+    $class->from_config( $spec )
+}
+
+sub from_yaml( $class, $yaml ) {
+    my $spec = Load $yaml;
+    $class->from_config( $spec )
+}
+
+sub from_config( $class, $config ) {
+    $class->_generate_limiters( $config )
+}
+
+=head2 C<< $limiter->limit( $eventname, $eventkey, @args ) >>
+
+    my ($token,@args) = await $limiter->limit('fetch',$url->hostname);
+    ... do work
+    undef $token; # release token
+
+    $limiter->limit('fetch',$url->hostname,$url)->then(sub( $token, $url) {
+        return http_request($url)->on_ready(sub { undef $token });
+    };
+
+The method to rate-limit an event from occurring, by key. The key can be
+C<undef> to mean a global limit on the event.
+
+The method returns a future that will return a token to release the current
+limit and the arguments passed in.
+
+=cut
+
+sub limit($self, $eventname, $eventkey=undef, @args) {
+    if( my $limiter = $self->limits->{$eventname}) {
+        return $limiter->limit( $eventkey, @args )
+    } else {
+        return Future->done( [], @args )
+    }
+};
+
+sub visualize( $self ) {
+    return [
+        map {
+        {
+          name       => $_,
+          high_water => 0,
+          next       => 0,
+          backlog    => 0,
+          # submission frequency?
+          # completion frequency?
+        },
+        } sort keys %{$self->limiters}
+    ],
 }
 
 1;
+
+=head1 TODO
+
+Persistence of the rate limiter, or periodical writeback of the current limits
+to a shared file / scoreboard to allow for cross-process limiting
+
+=cut

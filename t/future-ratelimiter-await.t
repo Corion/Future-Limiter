@@ -10,22 +10,20 @@ use Future::AsyncAwait;
 # We want to use/force the AnyEvent backend for now
 use AnyEvent::Future;
 
-use Future::Limiter;
+use Future::LimiterBucket;
 
 use Data::Dumper;
 
 # This one won't work with a lexical variable(?!)
 # Most likely a bug in Async::Await
-our $limiter = Future::Limiter->new(
+our $limiter = Future::LimiterBucket->new(
     burst => 5,
     rate  => 30/60, # 0.5/s
 );
 
 #warn Dumper $limiter;
 
-async sub limit_test {
-    my( $j ) = @_;
-
+async sub limit_test($j) {
     die "No more limiter for $j" unless $limiter;
     my $l = $limiter->limit;
     my $token = await $l;

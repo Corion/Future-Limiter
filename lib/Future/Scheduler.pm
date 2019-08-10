@@ -127,6 +127,8 @@ letting the module autodetect it, you can set it yourself.
 
 L<Future>
 
+L<Future::IO>
+
 =head1 REPOSITORY
 
 The public repository of this module is

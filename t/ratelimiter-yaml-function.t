@@ -3,17 +3,14 @@ use strict;
 use Filter::signatures;
 no warnings 'experimental::signatures';
 use feature 'signatures';
-use Test::More tests => 18;
+use Test::More tests => 8;
 use AnyEvent::Future;
 
 use YAML qw(LoadFile);
-use Future::LimiterBucket;
 use Future::Limiter;
-use Future::Limiter::Chain;
 use Future::Scheduler::Functions 'sleep', 'future';
 
 use Data::Dumper;
-
 my $limit = Future::Limiter->from_file( 't/ratelimits.yml' );
 
 ok exists $limit->limits->{namelookup}, "We have a limiter named 'namelookup'";
@@ -31,18 +28,20 @@ sub work($time, $id) {
     })->catch(sub{warn "Uhoh @_"})->then(sub{ future()->done($id)});
 }
 
-# This approach requires that all sections we use will always be available
-# in the config file. This is unlikely. Also, we don't get a good way for
-# insights into the latency or min / max throughput
+# Can we have ->race() / ->hyper() ? Is it the same as ->limit() ?
 
 my (@jobs, @done);
 my $start = time;
 for my $i (1..10) {
     push @jobs, Future->done($i)->then(sub($id) {
-        $limit->limit('request',undef, $i)
-    })->then(sub($token,$id,@r) {
-        ok ref $token, "We get a token passed from the limiter, and it's a ref";
+        $limit->limit('request', undef, $id )
+    })->then(sub {
+        my ($token,$id) = @_;
         work(4, $id);
+    })->then(sub(@r) {
+        $limit->limit('nonsense', undef, @r )
+    })->then(sub($token,$id,@r) {
+        return Future->done($id, @r)
     })->then(sub($id,@r) {
         push @done, [time-$start,$id];
         Future->done
@@ -59,4 +58,4 @@ is $done[0]->[0], $first, "Burst";
 is $done[1]->[0], $first, "Burst";
 is $done[2]->[0], $first, "Burst";
 is $done[3]->[0], $first+1, "Rate/maximum";
-is $done[4]->[0], $first+4, "Rate/maximum";
+cmp_ok $done[4]->[0], '>=', $first+4, "Rate/maximum";

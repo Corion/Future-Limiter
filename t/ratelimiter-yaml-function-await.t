@@ -3,14 +3,13 @@ use strict;
 use Filter::signatures;
 no warnings 'experimental::signatures';
 use feature 'signatures';
-use Test::More tests => 18;
+use Test::More tests => 8;
 use AnyEvent::Future;
 
 use YAML qw(LoadFile);
-use Future::LimiterBucket;
 use Future::Limiter;
-use Future::Limiter::Chain;
 use Future::Scheduler::Functions 'sleep', 'future';
+use Future::AsyncAwait;
 
 use Data::Dumper;
 
@@ -31,24 +30,23 @@ sub work($time, $id) {
     })->catch(sub{warn "Uhoh @_"})->then(sub{ future()->done($id)});
 }
 
-# This approach requires that all sections we use will always be available
-# in the config file. This is unlikely. Also, we don't get a good way for
-# insights into the latency or min / max throughput
-
+sub limit($name, @args) {
+    $limit->limit($name, undef, @args );
+};
 my (@jobs, @done);
 my $start = time;
+
+async sub launch {
+    my( $id ) = @_;
+    my $token = await limit('request', $id );
+    my @r = await work(4, $id);
+    await limit('nonsense', @r );
+    
+    push @done, [time-$start,$id];
+};
+
 for my $i (1..10) {
-    push @jobs, Future->done($i)->then(sub($id) {
-        $limit->limit('request',undef, $i)
-    })->then(sub($token,$id,@r) {
-        ok ref $token, "We get a token passed from the limiter, and it's a ref";
-        work(4, $id);
-    })->then(sub($id,@r) {
-        push @done, [time-$start,$id];
-        Future->done
-    })->catch(sub{
-        warn "@_ / $! / $_";
-    });
+    push @jobs, launch($i);
 }
 # Wait for the jobs
 my @res = Future->wait_all(@jobs)->get();

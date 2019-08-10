@@ -12,6 +12,6 @@ Was ist Rate Limiting?
 
 Was ist Ressourcenkontrolle?
     * Nicht mehr als vier Prozesse starten, da wir nur 4 CPUs haben
-    * Im simplelsten Fall ein Lock
+    * Im simpelsten Fall ein Lock
     * Nur einer darf zu einem Zeitpunkt zugreifen
 

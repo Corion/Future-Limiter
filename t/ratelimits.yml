@@ -16,3 +16,23 @@ something_else:
     - maximum: 4
     - burst : 3
       rate : 60/60
+http_request:
+    # Per hostname, do maximum 4 connections
+    by_key:
+        - burst : 3
+          rate : 60/60
+        - maximum: 4
+    # Per process, do maximum 8 connections
+    global:
+        - burst : 6
+          rate : 90/60
+        #- maximum: 8
+user_login:
+    # Per user, allow three attempts per minute
+    by_key:
+        - burst : 3
+          rate : 3/60
+    # Per process, allow a global rate of 180 login attempts per minute
+    global:
+        - burst : 180
+          rate : 180/60
