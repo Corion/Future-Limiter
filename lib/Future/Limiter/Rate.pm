@@ -114,4 +114,14 @@ sub schedule_queued( $self ) {
     };
 }
 
+sub visualize( $self ) {
+    return {
+          high_water => ($self->active_count > $self->maximum),
+          next       => $self->bucket->conform(1),
+          backlog    => 0+@{$self->queue},
+          # submission frequency?
+          # completion frequency?
+    },
+}
+
 1;
