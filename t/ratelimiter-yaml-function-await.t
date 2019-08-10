@@ -56,7 +56,7 @@ my $start = time;
 
 async sub launch {
     my( $id ) = @_;
-    await limit('request', $id );
+    my $token = await limit('request', $id );
     my @r = await work(4, $id);
     await limit('nonsense', @r );
     
