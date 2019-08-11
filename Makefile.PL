@@ -206,3 +206,8 @@ sub update_file {
         };
     };
 }
+    MIN_PERL_VERSION => '5.010', # we use "our", "feature"
+
+        'strict'                 => 0,
+        'feature'                => 0, # since 5.9.3
+        'Carp'                   => 0,
