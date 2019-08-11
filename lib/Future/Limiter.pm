@@ -34,7 +34,7 @@ Future::Limiter - impose rate and resource limits
           rate : 60/60
   YAML
 
-  ...
+  # ...
 
   my ($host_token, $rate_token);
   $limiter->limit( 'request', $hostname, $url )->then(sub {
