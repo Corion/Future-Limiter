@@ -38,7 +38,7 @@ my %module = (
     },
 
     'LICENSE'=> 'perl',
-    MIN_PERL_VERSION => '5.010', # we use "our"
+    MIN_PERL_VERSION => '5.010', # we use "our", "feature"
 
     PL_FILES            => {},
     BUILD_REQUIRES => {
