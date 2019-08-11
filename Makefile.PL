@@ -38,24 +38,27 @@ my %module = (
     },
 
     'LICENSE'=> 'perl',
-    MIN_PERL_VERSION => '5.006', # we use "our"
+    MIN_PERL_VERSION => '5.010', # we use "our"
 
     PL_FILES            => {},
     BUILD_REQUIRES => {
         'ExtUtils::MakeMaker' => 0,
     },
     TEST_REQUIRES => {
+        'Test::More'   => 0,
         'Data::Dumper' => 0,
     },
-
     'PREREQ_PM' => {
+        'strict'                 => 0,
+        'feature'                => 0, # since 5.9.3
         'Carp'                   => 0,
         'Moo'                    => 2, # fatal warnings are just stupid
-        'Filter::signatures'     => 0,
+        'Filter::signatures'     => 0, # we try to be compatible with most Perls
         'Algorithm::TokenBucket' => 0,
-        'AnyEvent::Future'       => 0, # for the timer...
+        'YAML'                   => 0, # for our config reading
+        'AnyEvent::Future'       => 0, # for the timer, temporary
         'Future'                 => 0,
-        'Future::AsyncAwait'     => 0.30, # for parsing "async sub($foo) { ..."
+        'Future::AsyncAwait'     => 0.30, # for parsing "async sub($foo) { ...", in tests
         'Future::IO'             => 0, # for getting ->sleep() futures
         'Guard'                  => 0,
         'Scalar::Util'           => 0, # for weaken
