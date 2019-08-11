@@ -30,7 +30,8 @@ Future::Limiter::LimiterChain - limit by maximum concurrent, rate
 
   # ...
 
-  push @jobs, Future->done($i)->then(sub($id) {
+  push @jobs, Future->done($i)->then(sub {
+      my( $id ) = @_;
       $l->limit('request', undef, $id )
   })->then(sub {
       my ($token,$id) = @_;
