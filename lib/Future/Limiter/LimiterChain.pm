@@ -28,7 +28,7 @@ Future::Limiter::LimiterChain - limit by maximum concurrent, rate
           rate : 60/60
   YAML
 
-  ...
+  # ...
 
   push @jobs, Future->done($i)->then(sub($id) {
       $l->limit('request', undef, $id )
