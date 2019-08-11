@@ -15,31 +15,31 @@ Future::Limiter::LimiterChain - limit by maximum concurrent, rate
 
 =head1 SYNOPSIS
 
-    my $l = Future::LimiterChain->from_yaml(<<'YAML');
-        request:
-            # Make no more than 1 request per second
-            # have no more than 4 requests in flight at a time
-            # If there is a backlog, process them as quickly as possible
-            - burst : 3
-            rate : 60/60
-            - maximum: 4
-        namelookup:
-            - burst : 3
-            rate : 60/60
-    YAML
+  my $l = Future::LimiterChain->from_yaml(<<'YAML');
+      request:
+          # Make no more than 1 request per second
+          # have no more than 4 requests in flight at a time
+          # If there is a backlog, process them as quickly as possible
+          - burst : 3
+          rate : 60/60
+          - maximum: 4
+      namelookup:
+          - burst : 3
+          rate : 60/60
+  YAML
 
-    ...
+  ...
 
-    push @jobs, Future->done($i)->then(sub($id) {
-        $l->limit('request', undef, $id )
-    })->then(sub {
-        my ($token,$id) = @_;
-        return perform_work_as_future($id, $token);
-    });
+  push @jobs, Future->done($i)->then(sub($id) {
+      $l->limit('request', undef, $id )
+  })->then(sub {
+      my ($token,$id) = @_;
+      return perform_work_as_future($id, $token);
+  });
 
-    # Wait for all jobs to finish, while avoiding hitting them with bursts
-    # of more than 3 requests and a rate of 60 requests/s.
-    my @res = Future->wait_all(@jobs)->get();
+  # Wait for all jobs to finish, while avoiding hitting them with bursts
+  # of more than 3 requests and a rate of 60 requests/s.
+  my @res = Future->wait_all(@jobs)->get();
 
 =head1 METHODS
 
