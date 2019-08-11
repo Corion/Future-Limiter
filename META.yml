@@ -5,10 +5,11 @@ author:
 build_requires:
   Data::Dumper: '0'
   ExtUtils::MakeMaker: '0'
+  Test::More: '0'
 configure_requires:
   ExtUtils::MakeMaker: '0'
 dynamic_config: 0
-generated_by: 'ExtUtils::MakeMaker version 7.24, CPAN::Meta::Converter version 2.150010'
+generated_by: 'ExtUtils::MakeMaker version 7.34, CPAN::Meta::Converter version 2.150010'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -19,13 +20,20 @@ no_index:
     - t
     - inc
 requires:
+  Algorithm::TokenBucket: '0'
+  AnyEvent::Future: '0'
   Carp: '0'
   Filter::signatures: '0'
   Future: '0'
-  Future::Scheduler: '0'
+  Future::AsyncAwait: '0.3'
+  Future::IO: '0'
+  Guard: '0'
   Moo: '2'
   Scalar::Util: '0'
-  perl: '5.006'
+  YAML: '0'
+  feature: '0'
+  perl: '5.010'
+  strict: '0'
 resources:
   repository: git://github.com/Corion/Future-Limiter.git
 version: '0.01'
