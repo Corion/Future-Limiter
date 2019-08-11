@@ -54,10 +54,9 @@ unified API.
 The usage with L<Future::AsyncAwait> is much more elegant, as you only need
 to keep the token around and other parameters live implicitly in your scope:
 
-  my( $host_token ) = await $concurrency->limit( $hostname );
-  my( $rate_token ) = await $rate->limit( $hostname );
+  my( $host_token ) = await $limiter->limit( 'request', $hostname );
   request_url( $url )
-  ...
+  # ...
 
 =cut
 
@@ -96,11 +95,11 @@ sub from_config( $class, $config ) {
 
 =head2 C<< $limiter->limit( $eventname, $eventkey, @args ) >>
 
-    my ($token,@args) = await $limiter->limit('fetch',$url->hostname);
+    my ($token,@args) = await $limiter->limit('fetch',$url->host_port);
     ... do work
     undef $token; # release token
 
-    $limiter->limit('fetch',$url->hostname,$url)->then(sub( $token, $url) {
+    $limiter->limit('fetch',$url->host_port,$url)->then(sub( $token, $url) {
         return http_request($url)->on_ready(sub { undef $token });
     };
 
