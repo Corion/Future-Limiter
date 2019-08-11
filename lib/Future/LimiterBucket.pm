@@ -10,6 +10,8 @@ use Carp qw(croak);
 use Future::Limiter::Resource;
 use Future::Limiter::Rate;
 
+our $VERSION = '0.01';
+
 # Container for the defaults
 
 =head1 ATTRIBUTES
