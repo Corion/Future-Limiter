@@ -47,6 +47,7 @@ my %module = (
     TEST_REQUIRES => {
         'Test::More'   => 0,
         'Data::Dumper' => 0,
+        'URI'          => 0,
     },
     'PREREQ_PM' => {
         'strict'                 => 0,
