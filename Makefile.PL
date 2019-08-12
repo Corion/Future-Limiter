@@ -62,6 +62,7 @@ my %module = (
         'Future::IO'             => 0, # for getting ->sleep() futures
         'Guard'                  => 0,
         'Scalar::Util'           => 0, # for weaken
+        'PerlX::Maybe'           => 0, # for convenience hash passing in constructors
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'Future-Limiter-*' },

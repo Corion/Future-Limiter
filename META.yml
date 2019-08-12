@@ -29,6 +29,7 @@ requires:
   Future::IO: '0'
   Guard: '0'
   Moo: '2'
+  PerlX::Maybe: '0'
   Scalar::Util: '0'
   YAML: '0'
   feature: '0'
