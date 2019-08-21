@@ -59,6 +59,9 @@
    },
    "release_status" : "stable",
    "resources" : {
+      "license" : [
+         "https://dev.perl.org/licenses/"
+      ],
       "repository" : {
          "type" : "git",
          "url" : "git://github.com/Corion/Future-Limiter.git",

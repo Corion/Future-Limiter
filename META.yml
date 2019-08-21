@@ -37,6 +37,7 @@ requires:
   perl: '5.010'
   strict: '0'
 resources:
+  license: https://dev.perl.org/licenses/
   repository: git://github.com/Corion/Future-Limiter.git
 version: '0.01'
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'
