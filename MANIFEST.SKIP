@@ -18,3 +18,4 @@ Makefile$
 ^.gitignore
 ^.travis.yml
 ^Future-Limiter
+^.*\.pod$

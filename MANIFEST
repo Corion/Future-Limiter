@@ -1,9 +1,11 @@
 Changes
 lib/Future/Limiter.pm
 lib/Future/Limiter/Chain.pm
+lib/Future/Limiter/LimiterChain.pm
 lib/Future/Limiter/Rate.pm
 lib/Future/Limiter/Resource.pm
 lib/Future/Limiter/Role.pm
+lib/Future/LimiterBucket.pm
 LICENSE
 Makefile.PL
 MANIFEST			This list of files
@@ -14,11 +16,20 @@ README
 README.mkdn
 t/future-limiter-yaml.t
 t/future-ratelimiter-await.t
+t/ratelimiter-yaml-function-await.t
+t/ratelimiter-yaml-function.t
+t/ratelimiter-yaml-global-key-await.t
+t/ratelimiter-yaml-global-key.t
+t/ratelimiter-yaml-section.t
+t/ratelimits-section.yml
 t/ratelimits.yml
 xt/99-changes.t
 xt/99-compile.t
 xt/99-manifest.t
+xt/99-minimumversion.t
 xt/99-pod.t
+xt/99-synopsis.t
+xt/99-test-prerequisites.t
 xt/99-todo.t
 xt/99-unix-text.t
 xt/99-versions.t
