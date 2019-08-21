@@ -29,7 +29,7 @@ my %module = (
                 web => "https://github.com/Corion/$distlink",
                 url => "git://github.com/Corion/$distlink.git",
                 type => 'git',
-            }
+            },
             bugtracker => "https://rt.cpan.org/Public/Dist/Display.html?Name=$distbase",
             license    => "https://dev.perl.org/licenses/",
         },
